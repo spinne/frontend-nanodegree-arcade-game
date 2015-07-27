@@ -1,13 +1,14 @@
 // Enemies our player must avoid
 var Enemy = function() {
-    // Variables applied to each of our instances go.
+    // Variables applied to each of our instances.
 	
-	/* Draw the enemies to the left of the canvas (x-position).
+	/* Draw all enemies to the left of the canvas (x-position).
 	 * Define the y-position variable and the speed variable.
 	 */
 	this.x = -101;
 	this.y;
 	this.speed;
+	
     // The image/sprite for our enemies, this uses
     // a helper we've provided to easily load images
     this.sprite = 'images/enemy-bug.png';
@@ -21,11 +22,14 @@ Enemy.prototype.update = function(dt) {
     // which will ensure the game runs at the same speed for
     // all computers.
 	
-	// Move the enemies along the screen with the set speed.
-	this.x += this.speed * dt;
+	// Check player.state if game is running or paused.
+	if (player.state === 'go') {
+		// Move the enemies along the screen with the set speed and time delta.
+		this.x += this.speed * dt;
+	}
 	
 	/* If an enemy moves off the screen on the right, reset it
-	 * to the left of the screen - looks like it's going in circle.
+	 * to the left.
 	 */
 	if (this.x > 505){
 		this.x = -101;
@@ -47,7 +51,12 @@ var Player = function() {
 	// Starting point for the player.
 	this.x = 202;
 	this.y = 404;
-	// The image for the player, using the provided helper.
+	
+	// 
+	this.state = 'stop';
+	this.lives = 5;
+	
+	// Image for the player, using the provided helper.
 	this.sprite = 'images/char-boy.png';
 }
 
@@ -56,22 +65,20 @@ var Player = function() {
 Player.prototype.update = function() {
 	/* Collision detection using circles.
 	 * The basic algorithm is described here: https://developer.mozilla.org/en-US/docs/Games/Techniques/2D_collision_detection
-	 * To check collision against all enemies, the detection is within a for-loop,
-	 * which runs through all the enemies in the allEnemies array.
+	 * To check collision against all enemies, the detection is within a for-loop.
 	 */
 	var len = allEnemies.length;
 	
 	for (var k = 0; k < len; k++) {
-		/* First I calculate the x and y position of the centre of the circle for
-		 * the player - since I don't want the circle in the centre of sprite but 
-		 * tight around the visible player.
-		 * By testing I came to a circle radius of 40 for the player.
+		/* Calculation of x and y position for centre of player circle,
+		 * to place the circle tight around the visible player.
+		 * Setting a circle radius of 40.
 		 */
 		var playerCenterX = this.x + 50;
 		var playerCenterY = this.y + 105;
 		var playerRadius = 40;
 		
-		/* The same calculations of the circle centre for the enemy.
+		/* The calculations for the circle centre of enemy.
 		 * Using a radius of 32.
 		 */
 		var enemiesCenterX = allEnemies[k].x + 50;
@@ -79,65 +86,83 @@ Player.prototype.update = function() {
 		var enemiesRadius = 32;
 		
 		/* Calculating the distance between the centre of the player and 
-		 * the centre of the enemy..
+		 * the centre of the enemy.
 		 */
 		var dx = enemiesCenterX - playerCenterX;
 		var dy = enemiesCenterY - playerCenterY;
 		var distance = Math.sqrt(dx * dx + dy * dy);
 		
 		/* The actual collision detection: If the distance between the centres
-		 * is smaller then the sum of the defined radii of the circles, there is collision.
+		 * is smaller then the sum of the defined radii, there is a collision.
 		 */
 		if (distance < (playerRadius + enemiesRadius)) {
 			// Reset the player to the starting position.
 			this.x = 202;
 			this.y = 404;
+			this.lives -= 1;
 		}
-		
 	}
 	
-	// Checking if the player has reached the water and won the game.
-	if (this.y < 0){
-		alert('You win!');
+	// Checking if the player has reached the water and won.
+	if (this.y < 0) {
+		alert('You won!');
 		this.x = 202;
 		this.y = 404;
+	}
+	
+	// Checking if the player has lost all his lives.
+	if (this.lives < 1) {
+		alert('Sorry, you lost!');
+		this.x = 202;
+		this.y = 404;
+		this.lives = 5;
 	}
 }
 
 // render() method - to draw the player on the screen.
 Player.prototype.render = function() {
-	ctx.drawImage(Resources.get(this.sprite), this.x, this.y);	
+	ctx.drawImage(Resources.get(this.sprite), this.x, this.y);
 }
 
 
 // handleInput() method - to move the player.
 Player.prototype.handleInput = function(key) {
-	// Switch - to see which kind of input and change the player position
-	switch (key){
-		case 'left':
-			if (this.x > 0) {
-				this.x -= 101;
-			};
-			break;
-		case 'up':
-			if (this.y > 0) {
-				this.y -= 83;
-			};
-			break;
-		case 'right':
-			if (this.x < 404){
-				this.x += 101;
-			};
-			break;
-		case 'down':
-			if (this.y < 404) {
-				this.y += 83;
-			};
-			break;
-		default: 
-			break;
+	// Check player.state to start or pause game.
+	if (key === 'space') {
+		if (this.state === 'go') {
+		this.state = 'stop';
+		} else {
+			this.state = 'go';
+		}
+	} else if (this.state === 'go') {
+		// Switch - see which kind of input and move the player.
+		switch (key) {
+			case 'left':
+				if (this.x > 0) {
+					this.x -= 101;
+				};
+				break;
+			case 'up':
+				if (this.y > 0) {
+					this.y -= 83;
+				};
+				break;
+			case 'right':
+				if (this.x < 404) {
+					this.x += 101;
+				};
+				break;
+			case 'down':
+				if (this.y < 404) {
+					this.y += 83;
+				};
+				break;
+			default: 
+				break;
+		}
 	}
 }
+
 
 // Now instantiate your objects.
 // Place all enemy objects in an array called allEnemies
@@ -156,8 +181,7 @@ do {
 	/* Choose which y position (row) the enemy is put in,
 	 * with two enemies in the middle row. 
 	 * And update the speed depending on which row the enemy is in:
-	 * Fastest in the top row and slowest in the middle row,
-	 * with speed in the bottom row somewhere in between.
+	 * Fastest in the top row and slowest in the middle row.
 	 */
 	if (i < 1){
 		enemy.y = 65;
