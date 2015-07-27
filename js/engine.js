@@ -161,10 +161,7 @@ var Engine = (function(global) {
      * those sorts of things. It's only called once by the init() method.
      */
     function reset() {
-        ctx.font = '22px sans-serif';
-		ctx.textBaseline = 'top';
-		ctx.fillStyle = '#333';
-		ctx.fillText('Press space to start the game', 101, 10);
+        player.gameStates();
     }
 
     /* Go ahead and load all of the images we know we're going to need to

@@ -52,8 +52,8 @@ var Player = function() {
 	this.x = 202;
 	this.y = 404;
 	
-	// 
-	this.state = 'stop';
+	// Variables for game state and player lives.
+	this.state = 'start';
 	this.lives = 5;
 	
 	// Image for the player, using the provided helper.
@@ -100,28 +100,27 @@ Player.prototype.update = function() {
 			this.x = 202;
 			this.y = 404;
 			this.lives -= 1;
+			this.gameStates();
 		}
 	}
 	
 	// Checking if the player has reached the water and won.
 	if (this.y < 0) {
-		alert('You won!');
-		this.x = 202;
-		this.y = 404;
+		this.state = 'won';
 	}
 	
 	// Checking if the player has lost all his lives.
 	if (this.lives < 1) {
-		alert('Sorry, you lost!');
 		this.x = 202;
 		this.y = 404;
-		this.lives = 5;
+		this.state = 'lost';
 	}
 }
 
 // render() method - to draw the player on the screen.
 Player.prototype.render = function() {
 	ctx.drawImage(Resources.get(this.sprite), this.x, this.y);
+	this.gameStates();
 }
 
 
@@ -131,6 +130,10 @@ Player.prototype.handleInput = function(key) {
 	if (key === 'space') {
 		if (this.state === 'go') {
 		this.state = 'stop';
+		} else if (this.state === 'won'){
+			this.x = 202;
+			this.y = 404;
+			this.state = 'go';
 		} else {
 			this.state = 'go';
 		}
@@ -163,6 +166,54 @@ Player.prototype.handleInput = function(key) {
 	}
 }
 
+Player.prototype.gameStates = function(){
+	ctx.font = '22px sans-serif';
+	ctx.textBaseline = 'top';
+	ctx.fillStyle = 'rgba(255,255,255,0.5)';
+	
+	switch (this.state) {
+		case 'stop':
+			ctx.fillRect(0, 214, 505, 85);
+			ctx.fillStyle = '#333';
+			ctx.fillText('Press space to continue the game', 101, 238);
+			break;
+		case 'start':
+			ctx.fillRect(0, 214, 505, 85);
+			ctx.fillStyle = '#333';
+			ctx.fillText('Press space to start and pause the game', 55, 238);
+			break;
+		case 'won':
+			ctx.fillRect(0, 214, 505, 85);
+			ctx.fillStyle = '#333';
+			ctx.fillText('Won', 202, 238);
+			this.lives = 5;
+			break;
+		case 'lost':
+			ctx.fillRect(0, 214, 505, 85);
+			ctx.fillStyle = '#333';
+			ctx.fillText('Lost', 202, 238);
+			this.lives = 5;
+			break;
+		case 'go':
+			ctx.clearRect(0, 0, 505, 51);
+			ctx.fillText('Lives: ' + this.lives, 10, 10);
+			break;
+		default:
+			break;
+	}
+	
+	/*if (this.state === 'stop') {
+		ctx.fillText('Press space to continue the game', 101, 238);
+	} else if (this.state === 'start') {
+		ctx.fillText('Press space to start and pause the game', 55, 238);
+	} else if (this.state === 'won') {
+		ctx.fillText('Won', 202, 238);
+		this.lives = 5;
+	} else if (this.state === 'lost') {
+		ctx.fillText('Lost', 202, 238);
+		this.lives = 5;
+	} */
+}
 
 // Now instantiate your objects.
 // Place all enemy objects in an array called allEnemies
