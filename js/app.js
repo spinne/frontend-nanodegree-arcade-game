@@ -22,7 +22,7 @@ Enemy.prototype.update = function(dt) {
     // which will ensure the game runs at the same speed for
     // all computers.
 
-	// Check player.state if game is running or paused.
+	// Check player.state if the game is running, if not stop moving the enemies.
 	if (player.state === 'go') {
 		// Move the enemies along the screen with the set speed and time delta.
 		this.x += this.speed * dt;
@@ -52,9 +52,10 @@ var Player = function() {
 	this.x = 202;
 	this.y = 404;
 
-	// Variables for game state and player lives.
+	// Variables for game state, player lives and score (Collected Stars).
 	this.state = 'start';
 	this.lives = 5;
+	this.score = 0;
 
 	// Image for the player, using the provided helper.
 	this.sprite = 'images/char-boy.png';
@@ -66,6 +67,7 @@ Player.prototype.update = function() {
 	/* Collision detection using circles.
 	 * The basic algorithm is described here: https://developer.mozilla.org/en-US/docs/Games/Techniques/2D_collision_detection
 	 * To check collision against all enemies, the detection is within a for-loop.
+	 * Used for collision with enemies and collecting stars.
 	 */
 	var len = allEnemies.length;
 
@@ -88,9 +90,9 @@ Player.prototype.update = function() {
 		/* Calculating the distance between the centre of the player and
 		 * the centre of the enemy.
 		 */
-		var dx = enemiesCenterX - playerCenterX;
-		var dy = enemiesCenterY - playerCenterY;
-		var distance = Math.sqrt(dx * dx + dy * dy);
+		var collitionX = enemiesCenterX - playerCenterX;
+		var collitionY = enemiesCenterY - playerCenterY;
+		var distance = Math.sqrt(collitionX * collitionX + collitionY * collitionY);
 
 		/* The actual collision detection: If the distance between the centres
 		 * is smaller then the sum of the defined radii, there is a collision.
@@ -104,10 +106,40 @@ Player.prototype.update = function() {
 			// Update the screen.
 			this.gameStates();
 		}
+
+		/* Collision detection for the collectable items with both enemies and player
+		 * The calculations for the circle centre of collectable star.
+		 * Using a radius of 40.
+		 */
+		var starCenterX = star.x + 50;
+		var starCenterY = star.y + 108;
+		var starRadius = 40;
+
+		// Collision Star and Enemy
+		var starCollitionX = enemiesCenterX - starCenterX;
+		var starCollitionY = enemiesCenterY - starCenterY;
+		var starDistance = Math.sqrt(starCollitionX * starCollitionX + starCollitionY * starCollitionY);
+
+		// If an enemy hits the star, move the star to new position.
+		if (starDistance < (starRadius + enemiesRadius)){
+			star.position();
+		}
+
+		// Collision Star and Player (Collection)
+		var starCollectionX = playerCenterX - starCenterX;
+		var starCollectionY = playerCenterY - starCenterY;
+		var starCollectDistance = Math.sqrt(starCollectionX * starCollectionX + starCollectionY * starCollectionY);
+
+		// If Player collects star, up the score and update the screen, then move the star.
+		if (starCollectDistance < (starRadius + playerRadius)){
+			this.score += 1;
+			this.gameStates();
+			star.position();
+		}
 	}
 
-	// Checking if the player has reached the water and won.
-	if (this.y < 0) {
+	// Checking if the player has reached the water, collected 5 stars and won.
+	if (this.y < 0 && this.score > 4) {
 		this.state = 'won';
 	}
 
@@ -123,6 +155,7 @@ Player.prototype.update = function() {
 // render() method - to draw the player on the screen.
 // Also handles state changes.
 Player.prototype.render = function() {
+	star.render();
 	ctx.drawImage(Resources.get(this.sprite), this.x, this.y);
 	if (this.state != 'go'){
 		this.gameStates();
@@ -132,7 +165,7 @@ Player.prototype.render = function() {
 
 // handleInput() method - to move the player.
 Player.prototype.handleInput = function(key) {
-	// Check player.state to start, pause or reload game.
+	// Check player.state to start, play, pause or reload game.
 	if (key === 'space') {
 		if (this.state === 'go') {
 			this.state = 'stop';
@@ -172,51 +205,112 @@ Player.prototype.handleInput = function(key) {
 
 
 /* gameStates method
- *
+ * This method only draws the texts depending on the player.state variable.
+ * The actual start / stop / play / pause functionality is implemented with
+ * changes to the player.state variable throughout this code.
  */
 Player.prototype.gameStates = function(){
 	// Set basic font style.
-	ctx.font = '22px sans-serif';
+	ctx.font = '18px sans-serif';
 	ctx.textBaseline = 'top';
 
 	if (this.state != 'go') {
 		// Draw semi-translucent rectangle to make text more readable.
-		ctx.fillStyle = 'rgba(255,255,255,0.5)';
-		ctx.fillRect(0, 214, 505, 85);
+		ctx.fillStyle = 'rgba(255,255,255,0.75)';
+		ctx.fillRect(0, 190, 505, 140);
 		ctx.fillStyle = '#333';
+
 		// Check state and draw appropriate text.
 		switch (this.state) {
 			case 'stop':
-				ctx.fillText('Press space to continue the game', 101, 238);
+				ctx.fillText('Press SPACE to continue.', 101, 250);
+				ctx.font = 'bold 22px sans-serif';
+				ctx.fillText('Paused!', 215, 198);
 				break;
 			case 'won':
-				ctx.fillText('Won', 202, 238);
+				ctx.fillText('Want to try again? Hit SPACE.', 101, 250);
+				ctx.font = 'bold 22px sans-serif';
+				ctx.fillText('Gratulations You Won!', 145, 198);
 				break;
 			case 'lost':
-				ctx.fillText('Lost', 202, 238);
+				ctx.fillText('Want to try again? Hit SPACE.', 101, 250);
+				ctx.font = 'bold 22px sans-serif';
+				ctx.fillText('Sorry, you lost.', 185, 198);
 				break;
 			case 'start':
-				ctx.fillText('Press space to start and pause the game', 55, 238);
+				ctx.fillText('Help the Boy collect 5 Stars and then', 101, 228);
+				ctx.fillText('cross to the water.', 101, 250);
+				ctx.fillText('Press SPACE to start or pause.', 101, 272);
+				ctx.fillText('Use ARROW KEYS to move the player.', 101, 294);
+				ctx.font = 'bold 22px sans-serif';
+				ctx.fillText('Help the Boy!', 185, 198);
 				break;
 			default:
 				break;
 		}
 	}
 
-	// Draw number of lives on screen.
+	// Draw number of lives and number of collected stars on canvas.
 	if (this.state === 'go' || this.state === 'start') {
 		ctx.clearRect(0, 0, 505, 51);
+		if (this.score > 4) {
+			ctx.fillText('Enough Stars! Get to the Water!', 125, 12);
+		}
+		ctx.font = '22px sans-serif';
 		ctx.fillStyle = '#333';
 		ctx.fillText('Lives: ' + this.lives, 10, 10);
+		ctx.fillText('Stars: ' + this.score, 400, 10);
 	}
 };
 
+
+// Class for collectable Star.
+var Star = function(){
+	this.x = 0;
+	this.y = 0;
+	// Image for the Star, using the provided helper.
+	this.sprite = 'images/Star.png';
+}
+
+// position() method - to create a random position for the star.
+Star.prototype.position = function() {
+	// Creating random numbers.
+	var randomX = 5 * Math.random();
+	var randomY = 3 * Math.random();
+
+	/* Assign x and y a value, depending on the random numbers.
+	 * So stars only appear on the "road" rows.
+	 */
+	if (randomX < 1) {
+		this.x = 0;
+	} else if (randomX < 2) {
+		this.x = 101;
+	} else if (randomX < 3) {
+		this.x = 202;
+	} else if (randomX < 4) {
+		this.x = 303;
+	} else if (randomX < 5) {
+		this.x = 404;
+	}
+
+	if (randomY < 1) {
+		this.y = 72;
+	} else if (randomY < 2) {
+		this.y = 155;
+	} else if (randomY < 3) {
+		this.y = 238;
+	}
+}
+
+Star.prototype.render = function() {
+	ctx.drawImage(Resources.get(this.sprite), this.x, this.y);
+}
 
 // Place all enemy objects in an array called allEnemies.
 var allEnemies = [];
 var i = 0;
 do {
-	// Make a new instance of Enemy
+	// Make a new instance of Enemy.
 	var enemy = new Enemy();
 
 	/* Calculate the basic speed by generating a
@@ -249,10 +343,15 @@ do {
 // Create the player.
 var player = new Player();
 
+// Create the collectable star.
+var star = new Star();
+
+// Run the position method once to create a random position.
+star.position();
 
 // This listens for key presses and sends the keys to your
 // Player.handleInput() method. You don't need to modify this.
-// Added space for game controls.
+// Added 'space' for game controls.
 document.addEventListener('keyup', function(e) {
     var allowedKeys = {
         32: 'space',
