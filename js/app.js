@@ -270,7 +270,7 @@ var Star = function(){
 	this.y = 0;
 	// Image for the Star, using the provided helper.
 	this.sprite = 'images/Star.png';
-}
+};
 
 // position() method - to create a random position for the star.
 Star.prototype.position = function() {
@@ -300,11 +300,11 @@ Star.prototype.position = function() {
 	} else if (randomY < 3) {
 		this.y = 238;
 	}
-}
+};
 
 Star.prototype.render = function() {
 	ctx.drawImage(Resources.get(this.sprite), this.x, this.y);
-}
+};
 
 // Place all enemy objects in an array called allEnemies.
 var allEnemies = [];
